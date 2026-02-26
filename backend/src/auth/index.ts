@@ -1,4 +1,3 @@
-// backend/src/auth/index.ts
 import passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
@@ -29,11 +28,12 @@ export const setupAuth = (app: any) => {
   if (process.env.GOOGLE_CLIENT_ID) {
     passport.use(new GoogleStrategy({
       clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: '/api/auth/google/callback'
-    }, async (accessToken, refreshToken, profile, done) => {
+    }, async (_accessToken, _refreshToken, profile, done) => {
       try {
         let user = await User.findOne({ email: profile.emails?.[0].value });
+        
         if (!user) {
           user = await User.create({
             email: profile.emails?.[0].value,
@@ -42,10 +42,11 @@ export const setupAuth = (app: any) => {
             password: Math.random().toString(36).slice(-8) // Random password
           });
         }
+        
         return done(null, user);
       } catch (error) {
         logger.error('Google Strategy error:', error);
-        return done(error as Error, false);
+        return done(error, false);
       }
     }));
   }
